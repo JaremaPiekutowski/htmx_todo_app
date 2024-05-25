@@ -1,6 +1,6 @@
 import express from 'express';
 
-const courseGoals = ['Call Helena'];
+const courseGoals = [];
 
 const app = express();
 
@@ -29,24 +29,27 @@ app.get('/', (req, res) => {
             hx-swap="beforeend">
             <div>
               <label htmlFor="goal">Goal</label>
-              <input type="text" id="goal" name="goal" />
+              <input type="text" id="goalText" name="goalText" />
             </div>
             <button type="submit">Add goal</button>
           </form>
         </section>
         <section>
           <ul id="goals">
-          ${courseGoals.map(
-            (goal, index) => `
-            <li id="goal-${index}">
-              <span>${goal}</span>
+          ${courseGoals
+            .map(
+              (goal) => `
+            <li id="goal-${goal.id}">
+              <span>${goal.text}</span>
               <button
-                id="remove-goal"
-                hx-delete="/delete"
-                hx-target="body">Remove</button>
+                hx-delete="/goals/${goal.id}"
+                hx-target="#goal-${goal.id}"
+                hx-swap="outerHTML">
+                  Remove
+              </button>
             </li>
-          `
-          )}
+          `)
+            .join('')}
           </ul>
         </section>
       </main>
@@ -58,16 +61,31 @@ app.get('/', (req, res) => {
 
 app.post('/add', (req, res) => {
   console.log(req.body);
-  const newGoal = req.body.goal;
-  courseGoals.push(newGoal);
-  res.send(`<li id="goal-${courseGoals.length - 1}"><span>${newGoal}</span><button>Remove</button></li>`);
+  const goalText = req.body.goalText;
+  const id = new Date().getTime().toString();
+  const goal = { text: goalText, id: id };
+  courseGoals.push(goal);
+  console.log(courseGoals);
+  res.send(`
+        <li id="goal-${goal.id}">
+        <span>${goal.text}</span>
+        <button
+          hx-delete="/goals/${goal.id}"
+          hx-target="#goal-${goal.id}"
+          hx-swap="outerHTML"
+          >
+            Remove
+        </button>
+        </li>
+      `);
 });
 
-app.post('/delete', (req, res) => {
+app.delete('/goals/:id', (req, res) => {
   console.log(req.body);
-  courseGoals.splice(req.body.index, 1);
+  const id = req.params.id;
+  const index = courseGoals.findIndex((goal) => goal.id === id);
+  courseGoals.splice(index, 1);
   res.send();
 });
-
 
 app.listen(3000);
